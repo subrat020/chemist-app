@@ -1,0 +1,87 @@
+const express = require('express');
+const Medicine = require('../models/medicine');
+
+const router = express.Router();
+
+// Get all medicines
+router.get('/', async (req, res) => {
+    try {
+        const medicines = await Medicine.find();
+        res.json(medicines);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+// Get a single medicine by ID
+router.get('/:id', getMedicine, (req, res) => {
+    res.json(res.medicine);
+});
+
+// Create a new medicine
+router.post('/', async (req, res) => {
+    const medicine = new Medicine({
+        name: req.body.name,
+        description: req.body.description,
+        price: req.body.price,
+        quantity: req.body.quantity,
+    });
+
+    try {
+        const newMedicine = await medicine.save();
+        res.status(201).json(newMedicine);
+    } catch (err) {
+        res.status(400).json({ message: err.message });
+    }
+});
+
+// Update a medicine
+router.patch('/:id', getMedicine, async (req, res) => {
+    if (req.body.name != null) {
+        res.medicine.name = req.body.name;
+    }
+    if (req.body.description != null) {
+        res.medicine.description = req.body.description;
+    }
+    if (req.body.price != null) {
+        res.medicine.price = req.body.price;
+    }
+    if (req.body.quantity != null) {
+        res.medicine.quantity = req.body.quantity;
+    }
+
+    try {
+        const updatedMedicine = await res.medicine.save();
+        res.json(updatedMedicine);
+    } catch (err) {
+        res.status(400).json({ message: err.message });
+    }
+});
+
+// Delete a medicine
+router.delete('/:id', getMedicine, async (req, res) => {
+    try {
+        await res.medicine.remove();
+        res.json({ message: 'Deleted Medicine' });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+// Middleware to get medicine by ID
+async function getMedicine(req, res, next) {
+    let medicine;
+    try {
+        medicine = await Medicine.findById(req.params.id);
+        if (medicine == null) {
+            return res.status(404).json({ message: 'Cannot find medicine' });
+        }
+    } catch (err) {
+        return res.status(500).json({ message: err.message });
+    }
+
+    res.medicine = medicine;
+    next();
+}
+
+module.exports = router;
